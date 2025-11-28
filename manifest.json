@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Malu Recorder",
+  "version": "1.0.0",
+  "action": {
+    "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.ts",
+    "type": "module"
+  },
+  "permissions": [
+    "tabCapture",
+    "storage",
+    "scripting",
+    "activeTab",
+    "offscreen"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/content-script.ts"],
+      "run_at": "document_start"
+    }
+  ]
+}
