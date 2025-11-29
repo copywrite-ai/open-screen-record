@@ -30,7 +30,7 @@ function PlaybackApp() {
             }
 
             if (meta) {
-                console.log(`Loaded Metadata: ${meta.length} events`);
+                console.log(`Loaded Metadata: ${Array.isArray(meta) ? meta.length : (meta as any).events?.length} events`);
                 setMetadata(meta);
             } else {
                 console.warn('No metadata found, defaulting to empty');
@@ -57,11 +57,24 @@ function PlaybackApp() {
 
   useEffect(() => {
     if (canvasRef.current && videoRef.current && metadata) {
-      console.log('Initializing Renderer with', metadata.length, 'events');
+      // Handle both old array format and new object format
+      let events: MouseMetadata[] = [];
+      let viewport = null;
+
+      if (Array.isArray(metadata)) {
+          events = metadata;
+      } else if ((metadata as any).events) {
+          events = (metadata as any).events;
+          viewport = (metadata as any).viewport;
+      }
+      
+      console.log('Initializing Renderer with', events.length, 'events. Viewport:', viewport);
+      
       rendererRef.current = new Renderer(
         canvasRef.current,
         videoRef.current,
-        metadata
+        events,
+        viewport
       )
     }
   }, [metadata, dimensions]) 
@@ -116,9 +129,9 @@ function PlaybackApp() {
           maxWidth: '1000px'
       }}>
           <strong>Debug Info:</strong><br/>
-          Metadata Events: {metadata ? metadata.length : 'null'}<br/>
+          Metadata Events: {metadata ? (Array.isArray(metadata) ? metadata.length : (metadata as any).events?.length) : 'null'}<br/>
           Video Dims: {dimensions.width} x {dimensions.height}<br/>
-          IDB Check: {metadata?.length === 0 ? 'EMPTY (Check Console)' : 'OK'}
+          IDB Check: {!metadata ? 'EMPTY' : 'OK'}
       </div>
       
       <div style={{ marginBottom: '10px', zIndex: 100 }}>

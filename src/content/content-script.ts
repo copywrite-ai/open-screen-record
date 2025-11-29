@@ -14,15 +14,15 @@ export class MetadataRecorder {
     this.isRecording = true
     this.events = []
     this.startTime = Date.now()
-    window.addEventListener('mousemove', this.handleMouseMove)
-    window.addEventListener('click', this.handleClick)
+    window.addEventListener('mousemove', this.handleMouseMove, { capture: true })
+    window.addEventListener('click', this.handleClick, { capture: true })
     console.log('Metadata recorder started')
   }
 
   async stop() {
     this.isRecording = false
-    window.removeEventListener('mousemove', this.handleMouseMove)
-    window.removeEventListener('click', this.handleClick)
+    window.removeEventListener('mousemove', this.handleMouseMove, { capture: true })
+    window.removeEventListener('click', this.handleClick, { capture: true })
     console.log('Metadata recorder stopped', this.events)
     
     // Do NOT save to IDB here (it would save to the page origin, not extension origin)
@@ -80,8 +80,14 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
       recorder.start()
       sendResponse({ status: 'started' })
     } else if (message.type === 'STOP_RECORDING') {
-      recorder.stop().then((data) => {
-         sendResponse({ status: 'stopped', data })
+      recorder.stop().then((events) => {
+         // Include viewport info
+         const viewport = {
+             width: window.innerWidth,
+             height: window.innerHeight,
+             dpr: window.devicePixelRatio
+         };
+         sendResponse({ status: 'stopped', data: { events, viewport } })
       });
       return true; // Async response
     }

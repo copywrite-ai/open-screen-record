@@ -18,11 +18,11 @@
     "name": "modulepreload-polyfill"
   },
   "content-script.ts-loader.js": {
-    "file": "assets/content-script.ts-loader-CkpsaOti.js",
+    "file": "assets/content-script.ts-loader-zmt4ifdZ.js",
     "src": "content-script.ts-loader.js"
   },
   "playback.html": {
-    "file": "assets/playback-Bog03kgO.js",
+    "file": "assets/playback-BClQVgpJ.js",
     "name": "playback",
     "src": "playback.html",
     "isEntry": true,
@@ -33,7 +33,7 @@
     ]
   },
   "recorder.html": {
-    "file": "assets/recorder-Bg0_GPjN.js",
+    "file": "assets/recorder-BXDBYoNJ.js",
     "name": "recorder",
     "src": "recorder.html",
     "isEntry": true,
@@ -44,7 +44,7 @@
     ]
   },
   "src/background/service-worker.ts": {
-    "file": "assets/service-worker.ts-CpQl6buD.js",
+    "file": "assets/service-worker.ts-pCbmNdsF.js",
     "name": "service-worker.ts",
     "src": "src/background/service-worker.ts",
     "isEntry": true,
@@ -53,7 +53,7 @@
     ]
   },
   "src/content/content-script.ts": {
-    "file": "assets/content-script.ts-BfjVa-fE.js",
+    "file": "assets/content-script.ts-Bfk4VSec.js",
     "name": "content-script.ts",
     "src": "src/content/content-script.ts",
     "isEntry": true

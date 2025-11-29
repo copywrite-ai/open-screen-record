@@ -20,14 +20,18 @@ export class Renderer {
   // Camera state for smooth transitions
   private camera: Camera;
 
+  private viewport: { width: number; height: number; dpr: number } | null = null;
+
   constructor(
     canvas: HTMLCanvasElement,
     video: HTMLVideoElement,
-    metadata: MouseMetadata[]
+    metadata: MouseMetadata[],
+    viewport: { width: number; height: number; dpr: number } | null = null
   ) {
     this.canvas = canvas
     this.video = video
     this.metadata = metadata.sort((a, b) => a.timestamp - b.timestamp)
+    this.viewport = viewport
     this.ctx = canvas.getContext('2d')
     
     // Initialize camera center to CENTER of canvas, not 0,0
@@ -69,10 +73,23 @@ export class Renderer {
 
     const progress = (timestamp - prev.timestamp) / duration
     
-    return {
-      x: this.lerp(prev.x, next.x, progress),
-      y: this.lerp(prev.y, next.y, progress)
+    let x = this.lerp(prev.x, next.x, progress)
+    let y = this.lerp(prev.y, next.y, progress)
+
+    // Apply coordinate scaling if viewport info is available
+    // This maps CSS pixels (from content script) to Video pixels
+    if (this.viewport && this.video.videoWidth > 0) {
+        const scaleX = this.video.videoWidth / this.viewport.width;
+        const scaleY = this.video.videoHeight / this.viewport.height;
+        
+        // Use the larger scale to cover, or specific axis if we trust them.
+        // Usually video aspect ratio matches window, so scaleX ≈ scaleY.
+        // But we apply them independently to be safe.
+        x *= scaleX;
+        y *= scaleY;
     }
+
+    return { x, y }
   }
   
   private getTargetZoom(timestamp: number): number {

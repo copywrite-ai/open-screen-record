@@ -42,8 +42,8 @@ function RecorderApp() {
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
+            width: 3840,
+            height: 2160
         },
         audio: false
       });
@@ -88,7 +88,10 @@ function RecorderApp() {
       }
 
       // 2. Start Recording
-      const recorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm;codecs=vp9' });
+      const recorder = new MediaRecorder(streamRef.current, { 
+          mimeType: 'video/webm;codecs=vp9',
+          videoBitsPerSecond: 8000000 // 8 Mbps
+      });
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
       metadataSyncPromise.current = null; // Reset sync promise
@@ -183,9 +186,10 @@ function RecorderApp() {
         {status === 'setup' && (
             <div>
                 <p style={{ marginBottom: '24px', color: '#666' }}>
-                    Select the window or screen you want to record.
+                    Select the window or screen you want to record.<br/>
+                    <span style={{fontSize: '10px', color: '#ccc'}}>Target Tab: {targetTabIdRef.current}</span>
                 </p>
-                <button 
+                <button  
                     onClick={setupRecording}
                     style={buttonStyle}
                 >

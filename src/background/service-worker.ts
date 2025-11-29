@@ -30,15 +30,23 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 console.warn('Initial connect failed, attempting injection...', e);
                 // If failed, try injecting the script
                 try {
-                    await chrome.scripting.executeScript({
-                        target: { tabId: targetTabId },
-                        files: ['src/content/content-script.ts']
-                    });
-                    // Wait a tiny bit for script to initialize
-                    await new Promise(r => setTimeout(r, 100));
-                    // Retry sending
-                    await chrome.tabs.sendMessage(targetTabId, { type: 'START_RECORDING' });
-                    console.log('Injection and retry successful');
+                    // Dynamically get the correct filename from manifest (handles hashed filenames in build)
+                    const manifest = chrome.runtime.getManifest();
+                    const scriptFile = manifest.content_scripts?.[0]?.js?.[0];
+                    
+                    if (scriptFile) {
+                        await chrome.scripting.executeScript({
+                            target: { tabId: targetTabId },
+                            files: [scriptFile]
+                        });
+                        // Wait a tiny bit for script to initialize
+                        await new Promise(r => setTimeout(r, 100));
+                        // Retry sending
+                        await chrome.tabs.sendMessage(targetTabId, { type: 'START_RECORDING' });
+                        console.log('Injection and retry successful with:', scriptFile);
+                    } else {
+                        console.error('Could not find content script in manifest');
+                    }
                 } catch (injectErr) {
                     console.error('Failed to inject or retry content script', injectErr);
                 }
