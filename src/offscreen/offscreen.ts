@@ -33,22 +33,42 @@ chrome.runtime.onMessage.addListener(async (message) => {
     }
 
     try {
-      // 1. Get the media stream
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false, 
-        video: {
-          mandatory: {
-            chromeMediaSource: 'tab',
-            chromeMediaSourceId: streamId
+      // Check if source is desktop (from chrome.desktopCapture) or tab
+      const isDesktop = message.source === 'desktop';
+      
+      const constraints: any = {
+          audio: false,
+          video: {
+              mandatory: {
+                  chromeMediaSource: isDesktop ? 'desktop' : 'tab',
+                  chromeMediaSourceId: streamId
+              }
           }
-        } as any 
-      });
+      };
+      
+      // If it's desktop capture, we usually don't need min/max width/height constraints
+      // as it captures the raw screen/window size.
+      // But if it's tab capture (fallback), we might still use dimensions.
+      if (!isDesktop && message.dimensions) {
+          const { width, height, dpr } = message.dimensions;
+          const targetWidth = Math.round(width * dpr);
+          const targetHeight = Math.round(height * dpr);
+          constraints.video.mandatory.minWidth = targetWidth;
+          constraints.video.mandatory.minHeight = targetHeight;
+          constraints.video.mandatory.maxWidth = targetWidth;
+          constraints.video.mandatory.maxHeight = targetHeight;
+      }
+
+      console.log(`Requesting stream (${isDesktop ? 'desktop' : 'tab'})...`);
+
+      // 1. Get the media stream
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
       console.log('Stream obtained:', stream.id, 'Active:', stream.active);
-      if (stream.getVideoTracks().length > 0) {
-          console.log('Video track state:', stream.getVideoTracks()[0].readyState);
-      } else {
-          console.error('No video tracks found in stream!');
+      const track = stream.getVideoTracks()[0];
+      if (track) {
+          const settings = track.getSettings();
+          console.log(`Track settings: ${settings.width}x${settings.height}`);
       }
 
       // 2. Start Recorder - Let browser pick default mimeType if vp9 fails

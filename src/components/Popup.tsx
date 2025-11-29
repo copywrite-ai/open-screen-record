@@ -13,15 +13,15 @@ function Popup() {
   }, []);
 
   const handleStart = async () => {
-    // Get current active tab to record
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    
-    if (tab && tab.id) {
-      setIsRecording(true)
-      chrome.runtime.sendMessage({ type: 'START_RECORDING', tabId: tab.id })
-    } else {
-      console.error('No active tab found');
-    }
+    // Open the persistent recorder window
+    chrome.windows.create({
+        url: 'recorder.html',
+        type: 'popup',
+        width: 400,
+        height: 300
+    });
+    // Close popup immediately
+    window.close();
   }
 
   const handleStop = () => {

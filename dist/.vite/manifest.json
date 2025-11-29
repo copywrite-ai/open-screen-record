@@ -1,6 +1,6 @@
 {
   "../../../../../../@crx/manifest": {
-    "file": "assets/crx-manifest.js-COBC45VM.js",
+    "file": "assets/crx-manifest.js-C2vOGOD4.js",
     "name": "crx-manifest.js",
     "src": "../../../../../../@crx/manifest",
     "isEntry": true
@@ -18,21 +18,11 @@
     "name": "modulepreload-polyfill"
   },
   "content-script.ts-loader.js": {
-    "file": "assets/content-script.ts-loader-DlDBut4k.js",
+    "file": "assets/content-script.ts-loader-CkpsaOti.js",
     "src": "content-script.ts-loader.js"
   },
-  "index.html": {
-    "file": "assets/index.html-BHm553i_.js",
-    "name": "index.html",
-    "src": "index.html",
-    "isEntry": true,
-    "imports": [
-      "_modulepreload-polyfill-B5Qt9EMX.js",
-      "_client-D7f9BLy3.js"
-    ]
-  },
   "playback.html": {
-    "file": "assets/playback-BJ59DfX8.js",
+    "file": "assets/playback-Bog03kgO.js",
     "name": "playback",
     "src": "playback.html",
     "isEntry": true,
@@ -42,8 +32,19 @@
       "_index-CFZHzLVB.js"
     ]
   },
+  "recorder.html": {
+    "file": "assets/recorder-Bg0_GPjN.js",
+    "name": "recorder",
+    "src": "recorder.html",
+    "isEntry": true,
+    "imports": [
+      "_modulepreload-polyfill-B5Qt9EMX.js",
+      "_client-D7f9BLy3.js",
+      "_index-CFZHzLVB.js"
+    ]
+  },
   "src/background/service-worker.ts": {
-    "file": "assets/service-worker.ts-beYle7MR.js",
+    "file": "assets/service-worker.ts-CpQl6buD.js",
     "name": "service-worker.ts",
     "src": "src/background/service-worker.ts",
     "isEntry": true,
@@ -52,13 +53,13 @@
     ]
   },
   "src/content/content-script.ts": {
-    "file": "assets/content-script.ts-DtEOgehI.js",
+    "file": "assets/content-script.ts-BfjVa-fE.js",
     "name": "content-script.ts",
     "src": "src/content/content-script.ts",
     "isEntry": true
   },
   "src/offscreen/offscreen.html": {
-    "file": "assets/offscreen-CYnDT3Zk.js",
+    "file": "assets/offscreen-DILZrf9p.js",
     "name": "offscreen",
     "src": "src/offscreen/offscreen.html",
     "isEntry": true,

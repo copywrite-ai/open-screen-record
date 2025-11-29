@@ -1,42 +1,39 @@
-# Next Steps: Malu Recorder
+# Next Steps: Malu Recorder (Session 2)
 
-We have established the extension architecture, messaging pipeline, and the core "Auto-Zoom" rendering engine. The next phases focus on connecting the real data pipes.
+We have successfully implemented a high-quality screen recorder with auto-zoom playback. However, the switch to "Recorder Window" architecture introduced some regressions (missing metadata) and UX challenges.
 
-## 1. Implement Real Video Recording (Offscreen)
-Currently, `offscreen.ts` logs messages but doesn't record.
-*   **Action**: Implement `navigator.mediaDevices.getUserMedia` in `src/offscreen/offscreen.ts`.
-    *   Target: `chrome.tabCapture.getMediaStreamId` (passed from background) or `navigator.mediaDevices.getDisplayMedia` (user selection).
-    *   *Note*: Since we are in an offscreen doc, `getDisplayMedia` might prompt on the wrong surface. The standard MV3 approach for tab recording is:
-        1.  Background: `chrome.tabCapture.getMediaStreamId({ConsumerTabId: offscreenDocId})`.
-        2.  Offscreen: `getUserMedia({ video: { mandatory: { chromeMediaSource: 'tab', chromeMediaSourceId: streamId } } })`.
-*   **Action**: Use `MediaRecorder` to record the stream to chunks.
+## 1. Restore Metadata Recording (Critical)
+**Problem**: The `Recorder Window` starts recording independently. It sends `BROADCAST_START`, but the Service Worker needs to accurately tell the *Active Tab's* content script to start logging mouse events.
+**Plan**:
+*   In `service-worker.ts`: Listen for `BROADCAST_START`.
+*   Use `chrome.tabs.query({active: true})` to find the user's current tab (assuming they start recording while looking at the target tab).
+*   Send `START_RECORDING` to that tab.
+*   On `BROADCAST_STOP`, collect metadata from that tab and save to IDB.
 
-## 2. Data Storage Pipeline
-Passing large Video Blobs via `sendMessage` is inefficient and can crash.
-*   **Action**: Implement IndexedDB storage (e.g., using `idb` library).
-    *   Store: `recordingId`, `videoBlob`, `metadataJSON`, `createdAt`.
-*   **Flow**:
-    1.  Offscreen: Saves Video Blob to IndexedDB.
-    2.  Content Script: Sends Metadata to Background -> Background saves to IndexedDB (or forwards to Offscreen to save together).
-    3.  Playback: Reads from IndexedDB by ID.
+## 2. Improve Recorder UX (Dual Control)
+**Problem**: The recorder window gets hidden behind full-screen apps.
+**Status**: 🟢 In Progress
+**Plan**:
+*   **Refined Flow (Recora-style)**:
+    *   Click Extension Icon -> Opens `recorder.html` (Pinned Tab).
+    *   User selects source (Window/Screen) via native picker.
+    *   "Start Recording" button jumps user back to the original tab.
+    *   Metadata is synced via `BROADCAST_START` -> Background -> Content Script.
+*   **Next**: Verify coordinate mapping accuracy when recording "Entire Screen" vs "Window".
 
-## 3. Connect Playback to Real Data
-Currently, `PlaybackApp.tsx` uses `MOCK_METADATA` and a flower video URL.
-*   **Action**: Parse URL params (e.g., `playback.html?id=123`).
-*   **Action**: Fetch Blob and Metadata from IndexedDB.
-*   **Action**: `URL.createObjectURL(blob)` for the video source.
+## 3. Export to MP4
+**Problem**: Currently we can only watch the result in the Playback page.
+**Plan**:
+*   In `PlaybackApp.tsx`: Implement `canvas.captureStream()`.
+*   Use `MediaRecorder` to record the canvas stream in real-time (faster than real-time if possible, but real-time is easier).
+*   Combine with original audio track (if any).
+*   Generate a downloadable file.
 
-## 4. Polish the Renderer
-*   **Canvas Resolution**: Ensure the canvas matches the recorded video's resolution (which might be high DPI).
-*   **Audio**: Currently we only render video. Need to ensure `audioContext` is handled if we want sound.
-*   **Smoothing**: Tweak the Lerp values in `Renderer.ts` for best feel.
-*   **Cursor**: Replace the red dot with a nice SVG cursor image.
+## 4. Audio Support
+**Problem**: Current implementation has `audio: false`.
+**Plan**:
+*   Enable system audio in `getDisplayMedia`.
+*   Merge audio tracks into the final Blob.
 
-## 5. Export Feature
-*   **Action**: In `PlaybackApp`, implement `canvas.captureStream()`.
-*   **Action**: Use `MediaRecorder` again to record the *rendered* canvas (the one with zoom effects).
-*   **Action**: Generate a `.mp4` or `.webm` download.
-
-## 6. UI/UX
-*   **Popup**: Show recording duration.
-*   **Permissions**: Handle "Permission Denied" gracefully.
+## 5. Code Cleanup
+*   Remove unused `src/offscreen` folder and related logic in `service-worker.ts` (since we moved to Recorder Window).

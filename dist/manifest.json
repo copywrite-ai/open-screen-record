@@ -2,15 +2,14 @@
   "manifest_version": 3,
   "name": "Malu Recorder",
   "version": "1.0.0",
-  "action": {
-    "default_popup": "index.html"
-  },
+  "action": {},
   "background": {
     "service_worker": "service-worker-loader.js",
     "type": "module"
   },
   "permissions": [
     "tabCapture",
+    "desktopCapture",
     "storage",
     "scripting",
     "activeTab",
@@ -19,7 +18,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content-script.ts-loader-DlDBut4k.js"
+        "assets/content-script.ts-loader-CkpsaOti.js"
       ],
       "matches": [
         "<all_urls>"
@@ -33,7 +32,7 @@
         "<all_urls>"
       ],
       "resources": [
-        "assets/content-script.ts-DtEOgehI.js"
+        "assets/content-script.ts-BfjVa-fE.js"
       ],
       "use_dynamic_url": false
     }

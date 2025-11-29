@@ -70,7 +70,13 @@ const recorder = new MetadataRecorder()
 // Listen for messages from background to start/stop
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message.type === 'START_RECORDING') {
+    if (message.type === 'GET_DIMENSIONS') {
+        sendResponse({
+            width: window.innerWidth,
+            height: window.innerHeight,
+            dpr: window.devicePixelRatio
+        });
+    } else if (message.type === 'START_RECORDING') {
       recorder.start()
       sendResponse({ status: 'started' })
     } else if (message.type === 'STOP_RECORDING') {

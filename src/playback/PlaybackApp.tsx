@@ -12,6 +12,7 @@ function PlaybackApp() {
   const [videoSrc, setVideoSrc] = useState<string>('')
   const [metadata, setMetadata] = useState<MouseMetadata[] | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [dimensions, setDimensions] = useState({ width: 1280, height: 720 })
 
   useEffect(() => {
     const loadData = async () => {
@@ -44,6 +45,16 @@ function PlaybackApp() {
     loadData();
   }, [])
 
+  const onVideoMetadataLoaded = () => {
+      if (videoRef.current) {
+          const { videoWidth, videoHeight } = videoRef.current;
+          if (videoWidth && videoHeight) {
+              console.log(`Video dimensions loaded: ${videoWidth}x${videoHeight}`);
+              setDimensions({ width: videoWidth, height: videoHeight });
+          }
+      }
+  }
+
   useEffect(() => {
     if (canvasRef.current && videoRef.current && metadata) {
       console.log('Initializing Renderer with', metadata.length, 'events');
@@ -53,20 +64,10 @@ function PlaybackApp() {
         metadata
       )
     }
-  }, [metadata]) 
+  }, [metadata, dimensions]) 
 
   const animate = () => {
     if (isPlaying && rendererRef.current && videoRef.current) {
-      // Debug log every ~60 frames
-      if (Math.random() < 0.02) {
-          console.log('Render loop:', {
-              currentTime: videoRef.current.currentTime,
-              readyState: videoRef.current.readyState,
-              videoWidth: videoRef.current.videoWidth,
-              paused: videoRef.current.paused
-          });
-      }
-      
       rendererRef.current.draw(videoRef.current.currentTime * 1000)
       requestRef.current = requestAnimationFrame(animate)
     }
@@ -87,9 +88,7 @@ function PlaybackApp() {
         if (isPlaying) {
             videoRef.current.pause()
         } else {
-            console.log('Attempting to play video...');
             await videoRef.current.play();
-            console.log('Video playing!');
         }
         setIsPlaying(!isPlaying)
       } catch (e) {
@@ -105,6 +104,23 @@ function PlaybackApp() {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px' }}>
       <h1>Malu Editor</h1>
       
+      {/* Debug Info */}
+      <div style={{ 
+          background: '#eee', 
+          padding: '10px', 
+          marginBottom: '10px', 
+          fontSize: '12px', 
+          fontFamily: 'monospace',
+          border: '1px solid #ccc',
+          width: '100%',
+          maxWidth: '1000px'
+      }}>
+          <strong>Debug Info:</strong><br/>
+          Metadata Events: {metadata ? metadata.length : 'null'}<br/>
+          Video Dims: {dimensions.width} x {dimensions.height}<br/>
+          IDB Check: {metadata?.length === 0 ? 'EMPTY (Check Console)' : 'OK'}
+      </div>
+      
       <div style={{ marginBottom: '10px', zIndex: 100 }}>
         <button onClick={handlePlay} style={{ fontSize: '16px', padding: '8px 16px', cursor: 'pointer' }}>
             {isPlaying ? 'Stop & Edit' : 'Play Rendered'}
@@ -112,7 +128,7 @@ function PlaybackApp() {
         <button style={{ marginLeft: '10px', fontSize: '16px', padding: '8px 16px' }}>Export</button>
       </div>
 
-      <div style={{ position: 'relative', border: '1px solid #ccc', width: 1280, height: 720, overflow: 'hidden' }}>
+      <div style={{ position: 'relative', border: '1px solid #ccc', width: 1000, maxWidth: '100%', aspectRatio: `${dimensions.width}/${dimensions.height}`, overflow: 'hidden' }}>
          {/* Video element must be visible in DOM for drawImage to work. */}
         <video 
           ref={videoRef} 
@@ -123,28 +139,22 @@ function PlaybackApp() {
             width: '100%',
             height: '100%',
             objectFit: 'contain',
-            // Use opacity 1 temporarily to debug if it's actually playing underneath
-            // position: isPlaying ? 'absolute' : 'relative',
-            // opacity: isPlaying ? 0 : 1,
-            // zIndex: isPlaying ? -1 : 1,
-            
-            // DEBUG: Just put it on top but small if playing, to see if it moves
             position: 'absolute',
             top: 0, 
             left: 0,
-            opacity: 1, 
-            zIndex: isPlaying ? 10 : 1, // Keep video ON TOP for now to see if it works at all
-            transform: isPlaying ? 'scale(0.2)' : 'none', // Shrink it when playing rendered
-            transformOrigin: 'top right'
+            // Hide visually but keep in DOM
+            opacity: isPlaying ? 0 : 1, 
+            zIndex: isPlaying ? -1 : 1,
+            pointerEvents: isPlaying ? 'none' : 'auto'
           }} 
           onEnded={() => setIsPlaying(false)}
-          onLoadedData={() => console.log('Video loaded data')}
+          onLoadedMetadata={onVideoMetadataLoaded}
           onError={(e) => console.error('Video error:', e)}
         />
         <canvas 
           ref={canvasRef}
-          width={1280} 
-          height={720}
+          width={dimensions.width} 
+          height={dimensions.height}
           style={{ 
              width: '100%',
              height: '100%',
@@ -153,7 +163,9 @@ function PlaybackApp() {
              position: 'absolute',
              top: 0,
              left: 0,
-             zIndex: 5 // Canvas below video for this debug step
+             zIndex: 5,
+             opacity: isPlaying ? 1 : 0,
+             pointerEvents: isPlaying ? 'auto' : 'none'
           }}
         />
       </div>

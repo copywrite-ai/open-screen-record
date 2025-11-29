@@ -15,6 +15,7 @@ export default defineConfig({
       input: {
         playback: resolve(__dirname, 'playback.html'),
         offscreen: resolve(__dirname, 'src/offscreen/offscreen.html'),
+        recorder: resolve(__dirname, 'recorder.html'),
       },
     },
   },

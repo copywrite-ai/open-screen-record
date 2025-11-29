@@ -18,7 +18,7 @@ export class Renderer {
   private ctx: CanvasRenderingContext2D | null
   
   // Camera state for smooth transitions
-  private camera: Camera = { x: 0, y: 0, zoom: 1 }
+  private camera: Camera;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -30,11 +30,16 @@ export class Renderer {
     this.metadata = metadata.sort((a, b) => a.timestamp - b.timestamp)
     this.ctx = canvas.getContext('2d')
     
-    // Initialize camera center
-    if (metadata.length > 0) {
-        this.camera.x = metadata[0].x
-        this.camera.y = metadata[0].y
-    }
+    // Initialize camera center to CENTER of canvas, not 0,0
+    // This prevents the "fly in from corner" effect
+    this.camera = { 
+        x: canvas.width / 2, 
+        y: canvas.height / 2, 
+        zoom: 0.9 
+    };
+    
+    // If we have metadata, maybe start at the first mouse pos?
+    // But for "Card Style", starting at center is safer.
   }
 
   // Linear Interpolation
@@ -71,80 +76,117 @@ export class Renderer {
   }
   
   private getTargetZoom(timestamp: number): number {
-      // Enhanced Logic:
-      // 1. Base zoom is 1.5x (so panning is always visible)
-      // 2. Click zoom is 2.5x
+      // Logic: Cinematic Style
+      // Default 0.9 (Floating, shows gradient borders)
+      // Click 1.8 (Focus)
       const clickEvent = this.metadata.find(e => 
           e.type === 'click' && Math.abs(e.timestamp - timestamp) < 800
       )
-      return clickEvent ? 2.5 : 1.5
+      return clickEvent ? 1.8 : 0.9
   }
 
   private clamp(value: number, min: number, max: number): number {
       return Math.max(min, Math.min(max, value));
   }
 
+  private drawBackground() {
+      if (!this.ctx) return;
+      const gradient = this.ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
+      gradient.addColorStop(0, '#0093E9');
+      gradient.addColorStop(0.5, '#80D0C7');
+      gradient.addColorStop(1, '#80D0C7');
+      this.ctx.fillStyle = gradient;
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+
   draw(timestamp: number) {
     if (!this.ctx) return
 
-    // 1. Clear canvas
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+    // 1. Draw Gradient Background
+    this.drawBackground();
 
     const pos = this.getMousePosition(timestamp)
     
     this.ctx.save()
 
+    // --- Camera Logic ---
+    // We want the center of the camera to point to the mouse (or center of video).
+    // The "World" is the video content.
+    
+    let targetX, targetY;
+    
+    const targetZoom = this.getTargetZoom(timestamp)
+    this.camera.zoom = this.lerp(this.camera.zoom, targetZoom, 0.05)
+
     if (pos) {
-        const targetZoom = this.getTargetZoom(timestamp)
-        
-        // Smooth camera updates
-        this.camera.zoom = this.lerp(this.camera.zoom, targetZoom, 0.05)
-        
-        // Calculate visible area size at current zoom
-        // visibleWidth = canvasWidth / zoom
+        // Calculate visible area size in Source Space
         const visibleW = this.canvas.width / this.camera.zoom
         const visibleH = this.canvas.height / this.camera.zoom
         
-        // Target camera position is the mouse position
-        // But we must CLAMP it so we don't show black edges
-        // The camera center can range from [visibleW/2] to [canvasWidth - visibleW/2]
-        const minX = visibleW / 2
-        const maxX = this.canvas.width - visibleW / 2
-        const minY = visibleH / 2
-        const maxY = this.canvas.height - visibleH / 2
-        
-        const targetX = this.clamp(pos.x, minX, maxX)
-        const targetY = this.clamp(pos.y, minY, maxY)
-
-        this.camera.x = this.lerp(this.camera.x, targetX, 0.1) // Slightly faster pan
-        this.camera.y = this.lerp(this.camera.y, targetY, 0.1)
-
-        // Apply Transforms
-        this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2)
-        this.ctx.scale(this.camera.zoom, this.camera.zoom)
-        this.ctx.translate(-this.camera.x, -this.camera.y)
+        // If Zoom < 1, we see MORE than the canvas. Camera should stay centered.
+        if (this.camera.zoom < 1.0) {
+             targetX = this.canvas.width / 2;
+             targetY = this.canvas.height / 2;
+        } else {
+            // Clamp logic for Zoom > 1
+            const minX = visibleW / 2
+            const maxX = this.canvas.width - visibleW / 2
+            const minY = visibleH / 2
+            const maxY = this.canvas.height - visibleH / 2
+            
+            targetX = this.clamp(pos.x, minX, maxX)
+            targetY = this.clamp(pos.y, minY, maxY)
+        }
     } else {
-        // Fallback if no metadata: just show full video centered
-        // Optional: could add a slow gentle zoom-in effect here too
+        targetX = this.canvas.width / 2
+        targetY = this.canvas.height / 2
     }
 
-    // 3. Draw Content
-    // Video
-    // Note: we draw the video at its original size. 
-    // If video resolution != canvas resolution, scaling might be needed here.
-    // For MVP we assume 1:1 or handle it simply.
-    if (this.video.readyState >= 2) { // HAVE_CURRENT_DATA
+    this.camera.x = this.lerp(this.camera.x, targetX, 0.08)
+    this.camera.y = this.lerp(this.camera.y, targetY, 0.08)
+
+    // --- Apply Transforms ---
+    // 1. Move origin to Screen Center
+    this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2)
+    // 2. Scale
+    this.ctx.scale(this.camera.zoom, this.camera.zoom)
+    // 3. Move origin to Camera Position
+    this.ctx.translate(-this.camera.x, -this.camera.y)
+
+
+    // --- Draw Content ---
+    if (this.video.readyState >= 2) {
+        this.ctx.save();
+        
+        // Drop Shadow for the floating card look
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        this.ctx.shadowBlur = 40;
+        this.ctx.shadowOffsetY = 20;
+
+        // Crop Logic: REMOVED. 
+        // Since we switched to desktopCapture with accurate window/screen selection,
+        // we assume the user selected the correct area and we render the full video.
+        
+        // Destination: Draw at (0,0) because our coordinate system (after T(-Cam))
         this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height)
+        
+        this.ctx.restore();
     }
 
     // Virtual Mouse
     if (pos) {
-        this.ctx.fillStyle = 'rgba(255, 0, 0, 0.8)'
+        const cursorSize = 24 / (this.camera.zoom * 0.5 + 0.5);
+        
+        this.ctx.shadowColor = 'rgba(0,0,0,0.3)';
+        this.ctx.shadowBlur = 8;
+        this.ctx.shadowOffsetY = 4;
+
+        this.ctx.fillStyle = '#FF4757'; 
         this.ctx.beginPath()
-        this.ctx.arc(pos.x, pos.y, 15, 0, Math.PI * 2)
+        this.ctx.arc(pos.x, pos.y, cursorSize, 0, Math.PI * 2)
         this.ctx.fill()
         
-        // Mouse Ring (Visual flair)
+        this.ctx.shadowColor = 'transparent';
         this.ctx.strokeStyle = 'white'
         this.ctx.lineWidth = 3
         this.ctx.stroke()
