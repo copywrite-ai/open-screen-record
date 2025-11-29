@@ -39,11 +39,21 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                             target: { tabId: targetTabId },
                             files: [scriptFile]
                         });
-                        // Wait a tiny bit for script to initialize
-                        await new Promise(r => setTimeout(r, 100));
-                        // Retry sending
-                        await chrome.tabs.sendMessage(targetTabId, { type: 'START_RECORDING' });
-                        console.log('Injection and retry successful with:', scriptFile);
+                        
+                        // Robust Retry Logic (Polling) instead of hard wait
+                        let retries = 20;
+                        while (retries > 0) {
+                            try {
+                                await chrome.tabs.sendMessage(targetTabId, { type: 'START_RECORDING' });
+                                console.log('Injection and handshake successful');
+                                return; // Success
+                            } catch (e) {
+                                // Wait 50ms and retry
+                                await new Promise(r => setTimeout(r, 50));
+                                retries--;
+                            }
+                        }
+                        throw new Error('Content script handshake timeout');
                     } else {
                         console.error('Could not find content script in manifest');
                     }
