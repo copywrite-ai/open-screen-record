@@ -13,8 +13,7 @@
     "desktopCapture",
     "storage",
     "scripting",
-    "activeTab",
-    "offscreen"
+    "activeTab"
   ],
   "content_scripts": [
     {

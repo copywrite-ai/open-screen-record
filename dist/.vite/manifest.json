@@ -1,45 +1,39 @@
 {
   "../../../../../../@crx/manifest": {
-    "file": "assets/crx-manifest.js-C2vOGOD4.js",
+    "file": "assets/crx-manifest.js-B_FHNDGJ.js",
     "name": "crx-manifest.js",
     "src": "../../../../../../@crx/manifest",
     "isEntry": true
   },
-  "_client-D7f9BLy3.js": {
-    "file": "assets/client-D7f9BLy3.js",
+  "_client-DYDkQYN6.js": {
+    "file": "assets/client-DYDkQYN6.js",
     "name": "client"
   },
   "_index-CFZHzLVB.js": {
     "file": "assets/index-CFZHzLVB.js",
     "name": "index"
   },
-  "_modulepreload-polyfill-B5Qt9EMX.js": {
-    "file": "assets/modulepreload-polyfill-B5Qt9EMX.js",
-    "name": "modulepreload-polyfill"
-  },
   "content-script.ts-loader.js": {
-    "file": "assets/content-script.ts-loader-zmt4ifdZ.js",
+    "file": "assets/content-script.ts-loader-BqkhWUgg.js",
     "src": "content-script.ts-loader.js"
   },
   "playback.html": {
-    "file": "assets/playback-BClQVgpJ.js",
+    "file": "assets/playback-D30nRoKQ.js",
     "name": "playback",
     "src": "playback.html",
     "isEntry": true,
     "imports": [
-      "_modulepreload-polyfill-B5Qt9EMX.js",
-      "_client-D7f9BLy3.js",
+      "_client-DYDkQYN6.js",
       "_index-CFZHzLVB.js"
     ]
   },
   "recorder.html": {
-    "file": "assets/recorder-BXDBYoNJ.js",
+    "file": "assets/recorder-yoJtodaO.js",
     "name": "recorder",
     "src": "recorder.html",
     "isEntry": true,
     "imports": [
-      "_modulepreload-polyfill-B5Qt9EMX.js",
-      "_client-D7f9BLy3.js",
+      "_client-DYDkQYN6.js",
       "_index-CFZHzLVB.js"
     ]
   },
@@ -53,19 +47,9 @@
     ]
   },
   "src/content/content-script.ts": {
-    "file": "assets/content-script.ts-Bfk4VSec.js",
+    "file": "assets/content-script.ts-BuVLL8J3.js",
     "name": "content-script.ts",
     "src": "src/content/content-script.ts",
     "isEntry": true
-  },
-  "src/offscreen/offscreen.html": {
-    "file": "assets/offscreen-DILZrf9p.js",
-    "name": "offscreen",
-    "src": "src/offscreen/offscreen.html",
-    "isEntry": true,
-    "imports": [
-      "_modulepreload-polyfill-B5Qt9EMX.js",
-      "_index-CFZHzLVB.js"
-    ]
   }
 }
