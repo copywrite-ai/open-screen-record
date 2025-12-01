@@ -55,6 +55,10 @@ function PlaybackApp() {
       }
   }
 
+  const [isExporting, setIsExporting] = useState(false)
+  const exportRecorderRef = useRef<MediaRecorder | null>(null)
+  const exportChunksRef = useRef<Blob[]>([])
+
   useEffect(() => {
     if (canvasRef.current && videoRef.current && metadata) {
       // Handle both old array format and new object format
@@ -96,6 +100,7 @@ function PlaybackApp() {
   }, [isPlaying])
 
   const handlePlay = async () => {
+    if (isExporting) return;
     if (videoRef.current) {
       try {
         if (isPlaying) {
@@ -110,6 +115,67 @@ function PlaybackApp() {
     }
   }
   
+  const handleExport = async () => {
+      if (!canvasRef.current || !videoRef.current) return;
+      
+      setIsExporting(true);
+      setIsPlaying(true); // Start renderer loop
+      
+      // Reset video
+      videoRef.current.currentTime = 0;
+      
+      // Create stream from canvas
+      // 60 FPS for smooth export
+      const stream = canvasRef.current.captureStream(60);
+      
+      // Init Recorder
+      const recorder = new MediaRecorder(stream, {
+          mimeType: 'video/webm;codecs=vp9',
+          videoBitsPerSecond: 8000000
+      });
+      
+      exportRecorderRef.current = recorder;
+      exportChunksRef.current = [];
+      
+      recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+              exportChunksRef.current.push(e.data);
+          }
+      };
+      
+      recorder.onstop = () => {
+          const blob = new Blob(exportChunksRef.current, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `malu-export-${Date.now()}.webm`;
+          a.click();
+          
+          setIsExporting(false);
+          setIsPlaying(false);
+      };
+      
+      recorder.start();
+      
+      // Play video (which triggers animate loop via isPlaying)
+      try {
+          await videoRef.current.play();
+      } catch (e) {
+          console.error('Export play failed:', e);
+          setIsExporting(false);
+          setIsPlaying(false);
+      }
+  }
+  
+  // Hook into onEnded to stop export
+  const onVideoEnded = () => {
+      setIsPlaying(false);
+      if (isExporting && exportRecorderRef.current && exportRecorderRef.current.state !== 'inactive') {
+          exportRecorderRef.current.stop();
+          videoRef.current?.pause();
+      }
+  }
+
   if (isLoading) return <div>Loading recording...</div>
   if (!videoSrc) return <div>No recording found. Please record something first.</div>
 
@@ -135,10 +201,18 @@ function PlaybackApp() {
       </div>
       
       <div style={{ marginBottom: '10px', zIndex: 100 }}>
-        <button onClick={handlePlay} style={{ fontSize: '16px', padding: '8px 16px', cursor: 'pointer' }}>
-            {isPlaying ? 'Stop & Edit' : 'Play Rendered'}
+        <button 
+            onClick={handlePlay} 
+            disabled={isExporting}
+            style={{ fontSize: '16px', padding: '8px 16px', cursor: 'pointer', opacity: isExporting ? 0.5 : 1 }}>
+            {isPlaying && !isExporting ? 'Stop & Edit' : 'Play Rendered'}
         </button>
-        <button style={{ marginLeft: '10px', fontSize: '16px', padding: '8px 16px' }}>Export</button>
+        <button 
+            onClick={handleExport}
+            disabled={isExporting || isPlaying}
+            style={{ marginLeft: '10px', fontSize: '16px', padding: '8px 16px', cursor: 'pointer', opacity: (isExporting || isPlaying) ? 0.5 : 1 }}>
+            {isExporting ? 'Exporting...' : 'Export to WebM'}
+        </button>
       </div>
 
       <div style={{ position: 'relative', border: '1px solid #ccc', width: 1000, maxWidth: '100%', aspectRatio: `${dimensions.width}/${dimensions.height}`, overflow: 'hidden' }}>
@@ -146,7 +220,7 @@ function PlaybackApp() {
         <video 
           ref={videoRef} 
           src={videoSrc}
-          controls={true}
+          controls={!isExporting}
           crossOrigin="anonymous"
           style={{ 
             width: '100%',
@@ -160,7 +234,7 @@ function PlaybackApp() {
             zIndex: isPlaying ? -1 : 1,
             pointerEvents: isPlaying ? 'none' : 'auto'
           }} 
-          onEnded={() => setIsPlaying(false)}
+          onEnded={onVideoEnded}
           onLoadedMetadata={onVideoMetadataLoaded}
           onError={(e) => console.error('Video error:', e)}
         />
@@ -182,6 +256,12 @@ function PlaybackApp() {
           }}
         />
       </div>
+      
+      {isExporting && (
+          <div style={{ marginTop: '20px', color: '#666' }}>
+              Rendering video... do not close this tab.
+          </div>
+      )}
     </div>
   )
 }
