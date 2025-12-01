@@ -1,39 +1,28 @@
-# Next Steps: Malu Recorder (Session 2)
+# Next Steps: Malu Recorder
 
-We have successfully implemented a high-quality screen recorder with auto-zoom playback. However, the switch to "Recorder Window" architecture introduced some regressions (missing metadata) and UX challenges.
-
-## 1. Restore Metadata Recording (Critical)
-**Problem**: The `Recorder Window` starts recording independently. It sends `BROADCAST_START`, but the Service Worker needs to accurately tell the *Active Tab's* content script to start logging mouse events.
+## 1. Playback UI Redesign (CapCut Style) 🎨
+**Goal**: Transform the simple playback page into a professional Video Editor interface (similar to CapCut/OpenCut).
 **Plan**:
-*   In `service-worker.ts`: Listen for `BROADCAST_START`.
-*   Use `chrome.tabs.query({active: true})` to find the user's current tab (assuming they start recording while looking at the target tab).
-*   Send `START_RECORDING` to that tab.
-*   On `BROADCAST_STOP`, collect metadata from that tab and save to IDB.
+*   **Layout Structure**:
+    *   **Header**: App Logo, Project Title, Primary "Export" Action.
+    *   **Left Sidebar**: Assets/Media Library (Placeholder for now).
+    *   **Center Stage**: The Preview Player (Canvas) with a "floating" shadow look.
+    *   **Right Sidebar**: Properties Panel (Zoom Settings, Background Colors/Gradients).
+    *   **Bottom Panel**: Timeline/Playback Controls (Play/Pause, Scrubber, Time Display).
+*   **Theme**: Professional Dark Mode (`#1e1e1e` bg, `#252526` panels).
+*   **Refactoring**: Extract UI components to keep `PlaybackApp.tsx` clean.
 
-## 2. Improve Recorder UX (Dual Control)
-**Problem**: The recorder window gets hidden behind full-screen apps.
-**Status**: 🟢 In Progress
+## 2. Audio Support 🔊
+**Status**: Pending
 **Plan**:
-*   **Refined Flow (Recora-style)**:
-    *   Click Extension Icon -> Opens `recorder.html` (Pinned Tab).
-    *   User selects source (Window/Screen) via native picker.
-    *   "Start Recording" button jumps user back to the original tab.
-    *   Metadata is synced via `BROADCAST_START` -> Background -> Content Script.
-*   **Next**: Verify coordinate mapping accuracy when recording "Entire Screen" vs "Window".
+*   Enable system audio in `getDisplayMedia` constraints.
+*   Ensure audio is preserved during the "Export" process (canvas stream usually loses audio, need to mix track).
 
-## 3. Export to MP4
-**Problem**: Currently we can only watch the result in the Playback page.
+## 3. Recorder Refinement (Dual Control)
+**Status**: Functional, but can be polished.
 **Plan**:
-*   In `PlaybackApp.tsx`: Implement `canvas.captureStream()`.
-*   Use `MediaRecorder` to record the canvas stream in real-time (faster than real-time if possible, but real-time is easier).
-*   Combine with original audio track (if any).
-*   Generate a downloadable file.
+*   Ensure coordinate mapping is accurate for "Window" vs "Screen" recording.
 
-## 4. Audio Support
-**Problem**: Current implementation has `audio: false`.
-**Plan**:
-*   Enable system audio in `getDisplayMedia`.
-*   Merge audio tracks into the final Blob.
-
-## 5. Code Cleanup
-*   Remove unused `src/offscreen` folder and related logic in `service-worker.ts` (since we moved to Recorder Window).
+## 4. Code Cleanup
+**Status**: Pending
+*   Remove unused `src/offscreen` folder.

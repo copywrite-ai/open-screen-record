@@ -18,7 +18,7 @@
     "src": "content-script.ts-loader.js"
   },
   "playback.html": {
-    "file": "assets/playback-d2Qs0Lqs.js",
+    "file": "assets/playback-uqswBnA3.js",
     "name": "playback",
     "src": "playback.html",
     "isEntry": true,
