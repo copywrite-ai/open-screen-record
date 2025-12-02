@@ -31,26 +31,27 @@ describe('Background Service Worker', () => {
     mockTabsQuery.mockResolvedValue([{ id: 1 }]) // Default: one active tab
   })
 
-  it('should handle START_RECORDING message and setup offscreen', async () => {
+  it('should handle BROADCAST_START message', async () => {
     const sendResponse = vi.fn()
-    const message = { type: 'START_RECORDING' }
-    
+    const message = { type: 'BROADCAST_START', targetTabId: 1 }
+
     await handleMessage(message as any, {} as any, sendResponse)
-    
-    expect(mockCreateDocument).toHaveBeenCalled()
-    expect(mockSendMessage).toHaveBeenCalledWith({ type: 'START_RECORDING', target: 'offscreen' })
+
     expect(mockTabsSendMessage).toHaveBeenCalledWith(1, { type: 'START_RECORDING' })
-    expect(sendResponse).toHaveBeenCalledWith({ status: 'started' })
+    // It doesn't call sendResponse for start
   })
 
-  it('should handle STOP_RECORDING message', async () => {
+  it('should handle BROADCAST_STOP message', async () => {
     const sendResponse = vi.fn()
-    const message = { type: 'STOP_RECORDING' }
-    
+    const message = { type: 'BROADCAST_STOP', targetTabId: 1 }
+
+    // Mock the async response from tab
+    mockTabsSendMessage.mockImplementation((tabId, msg, cb) => {
+      if (cb) cb({ data: [] })
+    })
+
     await handleMessage(message as any, {} as any, sendResponse)
-    
-    expect(mockSendMessage).toHaveBeenCalledWith({ type: 'STOP_RECORDING', target: 'offscreen' })
-    expect(mockTabsSendMessage).toHaveBeenCalledWith(1, { type: 'STOP_RECORDING' })
-    expect(sendResponse).toHaveBeenCalledWith({ status: 'stopped' })
+
+    expect(mockTabsSendMessage).toHaveBeenCalledWith(1, { type: 'STOP_RECORDING' }, expect.any(Function))
   })
 })

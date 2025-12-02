@@ -7,7 +7,7 @@ describe('Manifest V3 Configuration', () => {
   })
 
   it('should have required permissions', () => {
-    const requiredPermissions = ['tabCapture', 'storage', 'scripting', 'activeTab', 'offscreen']
+    const requiredPermissions = ['tabCapture', 'desktopCapture', 'storage', 'scripting', 'activeTab']
     expect(manifest.permissions).toEqual(expect.arrayContaining(requiredPermissions))
   })
 
